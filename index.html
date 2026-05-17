@@ -5,108 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>松鼠小囤 AI Agent</title>
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f5f5f5; }
-        .chat-container { display: flex; flex-direction: column; height: 100%; }
-        .chat-header { background-color: #2B5895; color: white; padding: 15px; text-align: center; font-weight: bold; font-size: 18px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .message-area { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 15px; }
-        .msg { max-width: 75%; padding: 10px 14px; border-radius: 12px; font-size: 15px; line-height: 1.4; word-wrap: break-word; }
-        .msg.user { background-color: #FBB03B; color: #333; align-self: flex-end; border-top-right-radius: 2px; }
-        .msg.bot { background-color: white; color: #333; align-self: flex-start; border-top-left-radius: 2px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-        .input-area { display: flex; padding: 10px; background-color: white; border-top: 1px solid #e5e5e5; }
-        .input-area input { flex: 1; border: 1px solid #ddd; padding: 10px; border-radius: 20px; outline: none; font-size: 15px; }
-        .input-area button { background-color: #2B5895; color: white; border: none; padding: 0 18px; margin-left: 8px; border-radius: 20px; font-size: 15px; cursor: pointer; }
+        /* 强行让页面和聊天窗口充满整张屏幕，适合手机扫码体验 */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #f6f6f6;
+        }
+        #coze-chat-container {
+            width: 100% !important;
+            height: 100% !important;
+        }
     </style>
 </head>
 <body>
-    <div class="chat-container">
-        <div class="chat-header">🐿️ 松鼠小囤学长</div>
-        <div class="message-area" id="messageArea">
-            <div class="msg bot">你好呀！我是修读金融学的松鼠学长小囤。总觉得生活费莫名其妙蒸发？来跟学长聊聊你的消费困惑，或者输入【开始测试】来解锁你的SPTI消费人格吧！</div>
-        </div>
-        <div class="input-area">
-            <input type="text" id="userInput" placeholder="跟小囤学长聊点什么吧..." onkeydown="if(event.key==='Enter') sendMessage()">
-            <button onclick="sendMessage()">发送</button>
-        </div>
-    </div>
 
+    <div id="coze-chat-container"></div>
+
+    <script src="https://lf-cdn.coze.cn/obj/unpkg/flow-platform/chat-app-sdk/1.1.0-beta.3/index.js"></script>
     <script>
-        // 自动生成一个随机会话ID，防止不同人扫码数据串线
-        const sessionId = "session_" + Math.random().toString(36).substring(2, 15);
-        const projectId = 7639999685670830132; // 你的专属资产ID
-
-        async function sendMessage() {
-            const inputEl = document.getElementById('userInput');
-            const text = inputEl.value.trim();
-            if (!text) return;
-
-            // 1. 渲染用户消息（小囤亮黄色气泡）
-            appendMessage(text, 'user');
-            inputEl.value = '';
-
-            // 2. 创建Bot消息占位符（准备接收流式打字机效果）
-            const botMsgDiv = appendMessage('小囤正在思考...', 'bot');
-
-            try {
-                // 3. 呼叫你的专属无登录底层接口
-                const response = await fetch("https://tmg9ndccbf.coze.site/stream_run", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        // 提示：如果在正式测试时依然卡住，记得到扣子后台拿一下公开调用的 Authorization Bearer Token 填在这里
-                        "Authorization": "Bearer <YOUR_TOKEN>" 
-                    },
-                    body: JSON.stringify({
-                        "content": {
-                            "query": {
-                                "prompt": [{ "type": "text", "content": { "text": text } }]
-                            }
-                        },
-                        "type": "query",
-                        "session_id": sessionId,
-                        "project_id": projectId
-                    })
-                });
-
-                botMsgDiv.innerText = ''; // 清空思考提示
-                
-                // 4. 读取流式数据（让字一个一个丝滑地蹦出来）
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder("utf-8");
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    const chunk = decoder.decode(value, { stream: true });
-                    
-                    // 简易抓取流文本块拼装
-                    botMsgDiv.innerText += parseCozeChunk(chunk); 
-                    const messageArea = document.getElementById('messageArea');
-                    messageArea.scrollTop = messageArea.scrollHeight;
-                }
-
-            } catch (error) {
-                botMsgDiv.innerText = "学长开小差了，稍后再试吧。";
+        new CozeWebSDK.WebChatClient({
+            config: {
+                bot_id: '7639999685670830132', // 你的专属 Bot ID
+            },
+            componentProps: {
+                title: '松鼠小囤',
+            },
+            el: document.getElementById('coze-chat-container'),
+            ui: {
+                asMobile: true // 开启全屏内嵌模式
+            },
+            auth: {
+                type: 'anonymous' // 关键核心：设置为匿名访问，彻底绕过扣子平台的登录限制！
             }
-        }
-
-        function appendMessage(text, sender) {
-            const messageArea = document.getElementById('messageArea');
-            const div = document.createElement('div');
-            div.className = `msg ${sender}`;
-            div.innerText = text;
-            messageArea.appendChild(div);
-            messageArea.scrollTop = messageArea.scrollHeight;
-            return div;
-        }
-
-        function parseCozeChunk(chunk) {
-            try {
-                if(chunk.includes('"text"')) {
-                    const match = chunk.match(/"text"\s*:\s*"([^"]+)"/);
-                    if(match) return match[1].replace(/\\n/g, '\n');
-                }
-                return ""; 
-            } catch(e) { return ""; }
-        }
+        });
     </script>
 </body>
 </html>
