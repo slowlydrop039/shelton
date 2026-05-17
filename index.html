@@ -3,20 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>松鼠小囤 AI Agent</title>
+    <title>松鼠小囤</title>
     <style>
-        /* 强行让页面和聊天窗口充满整张屏幕，适合手机扫码体验 */
         html, body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #f6f6f6;
+            margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #f6f6f6;
         }
         #coze-chat-container {
-            width: 100% !important;
-            height: 100% !important;
+            width: 100% !important; height: 100% !important;
         }
     </style>
 </head>
@@ -28,17 +21,14 @@
     <script>
         new CozeWebSDK.WebChatClient({
             config: {
-                bot_id: '7639999685670830132', // 你的专属 Bot ID
+                bot_id: '7639999685670830132',
             },
             componentProps: {
                 title: '松鼠小囤',
             },
             el: document.getElementById('coze-chat-container'),
             ui: {
-                asMobile: true // 开启全屏内嵌模式
-            },
-            auth: {
-                type: 'anonymous' // 关键核心：设置为匿名访问，彻底绕过扣子平台的登录限制！
+                asMobile: true
             }
         });
     </script>
